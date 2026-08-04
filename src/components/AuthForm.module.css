@@ -1,0 +1,23 @@
+/* src/components/AuthForm.module.css */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  
+}
+
+.input {
+  margin-bottom: 1rem !important;
+  border-radius: 10px;
+}
+
+.button {
+  background-color: #238636 !important;
+  text-transform: none !important;
+  font-weight: 500 !important;
+  padding: 10px !important;
+}
+
+.button:hover {
+  background-color: #2ea043 !important;
+}

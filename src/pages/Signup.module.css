@@ -1,0 +1,35 @@
+
+.container {
+  background-color: #0d1117;
+  color: white;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.card {
+  background-color: #161b22 !important;
+  color: white !important;
+  padding: 2rem !important;
+  border-radius: 12px !important;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5) !important;
+  width: 100%;
+  max-width: 420px;
+}
+
+.link {
+  color: #58a6ff;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .card {
+    padding: 1.5rem !important;
+  }
+}
