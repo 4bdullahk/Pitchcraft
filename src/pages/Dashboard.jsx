@@ -38,7 +38,7 @@ import AddCommentIcon from "@mui/icons-material/AddComment";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
-import apiClient from "../utils/apiClient";
+import apiClient, { postGenerateWithFile } from "../utils/apiClient";
 import styles from "./Dashboard.module.css";
 
 const WELCOME_MESSAGE = {
@@ -60,10 +60,20 @@ export default function Dashboard() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
+  // Optimistic UI for the message currently in flight. Kept separate from
+  // `messages` (which is driven solely by the Firestore listener below) so the
+  // two can never race and produce a visible duplicate — `messages` is always
+  // the source of truth for anything persisted, this is only ever a preview.
+  const [pendingUserText, setPendingUserText] = useState(null);
+  const [thinking, setThinking] = useState(false);
   const [file, setFile] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const fileRef = useRef();
   const scrollRef = useRef();
+  // Guards against firing sendMessage twice for one Enter/click (e.g. a fast
+  // double-press). `loading` state alone isn't enough here since a second
+  // keypress can land before React re-renders with loading=true.
+  const sendingRef = useRef(false);
   const navigate = useNavigate();
 
   // Live list of this user's chats.
@@ -123,7 +133,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+  }, [messages, pendingUserText, thinking]);
 
   const ensureChat = async (firstMessageText) => {
     if (currentChatId) return currentChatId;
@@ -140,35 +150,24 @@ export default function Dashboard() {
   };
 
   const sendMessage = async () => {
-    if (!input.trim() || loading) return;
+    if (!input.trim() || sendingRef.current) return;
     if (!uid) {
       showToast("You need to be signed in to chat.", "error");
       return;
     }
 
+    sendingRef.current = true;
     setLoading(true);
 
     const messageText = input;
     const attachedFile = file;
-
-    const userMsg = {
-      id: `u-${Date.now()}-${Math.random()}`,
-      role: "user",
-      text: attachedFile ? `${messageText}\n\n📎 ${attachedFile.name}` : messageText,
-      createdAt: Date.now(),
-    };
-
-    const thinkingMsg = {
-      id: `thinking-${Date.now()}-${Math.random()}`,
-      role: "assistant",
-      text: "PitchCraft is thinking",
-      createdAt: Date.now(),
-    };
+    const displayText = attachedFile ? `${messageText}\n\n📎 ${attachedFile.name}` : messageText;
 
     setInput("");
     setFile(null);
     if (fileRef.current) fileRef.current.value = "";
-    setMessages((m) => [...m, userMsg, thinkingMsg]);
+    setPendingUserText(displayText);
+    setThinking(true);
 
     try {
       const chatId = await ensureChat(messageText);
@@ -178,51 +177,42 @@ export default function Dashboard() {
         const formData = new FormData();
         formData.append("message", messageText);
         formData.append("file", attachedFile);
-        res = await apiClient.post("/api/generate", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        res = await postGenerateWithFile(formData);
       } else {
         res = await apiClient.post("/api/generate", { message: messageText });
       }
 
       const assistantText = res?.data?.reply || "Sorry, I couldn't generate a reply.";
-
-      const assistantMsg = {
-        id: `a-${Date.now()}-${Math.random()}`,
-        role: "assistant",
-        text: assistantText,
-        createdAt: Date.now(),
-      };
-
       const chatRef = collection(db, "users", uid, "chats", chatId, "messages");
+
       await addDoc(chatRef, {
         role: "user",
-        text: userMsg.text,
+        text: displayText,
         timestamp: new Date().toISOString(),
       });
+      // The Firestore listener now has the confirmed user message, so drop
+      // our local preview of it to avoid a brief double-render.
+      setPendingUserText(null);
+
       await addDoc(chatRef, {
         role: "assistant",
         text: assistantText,
         timestamp: new Date().toISOString(),
       });
-
-      setMessages((m) => m.filter((msg) => !msg.id.startsWith("thinking")).concat(assistantMsg));
+      setThinking(false);
+      // The listener will pick up both writes above and become the sole
+      // source of truth for `messages` — no manual setMessages needed here.
     } catch (err) {
       console.error("AI service error:", err);
       const errorText =
         err?.response?.data?.error ||
         "There was an error contacting the AI service. Please try again.";
-      setMessages((m) =>
-        m.filter((msg) => !msg.id.startsWith("thinking")).concat({
-          id: `err-${Date.now()}-${Math.random()}`,
-          role: "assistant",
-          text: errorText,
-          createdAt: Date.now(),
-        })
-      );
+      setPendingUserText(null);
+      setThinking(false);
       showToast(errorText, "error");
     } finally {
       setLoading(false);
+      sendingRef.current = false;
     }
   };
 
@@ -240,6 +230,8 @@ export default function Dashboard() {
   const createNewChat = () => {
     setCurrentChatId(null);
     setMessages([WELCOME_MESSAGE]);
+    setPendingUserText(null);
+    setThinking(false);
     setSidebarOpen(false);
   };
 
@@ -257,6 +249,8 @@ export default function Dashboard() {
       if (currentChatId === chatId) {
         setCurrentChatId(null);
         setMessages([WELCOME_MESSAGE]);
+        setPendingUserText(null);
+        setThinking(false);
       }
       showToast("Chat deleted.", "success");
     } catch (err) {
@@ -399,19 +393,17 @@ export default function Dashboard() {
             <Box key={m.id} className={m.role === "user" ? styles.msgUser : styles.msgAssistant}>
               <div className={styles.msgBubble}>
                 <Box>
-                  <div className={m.id.startsWith("thinking") ? styles.thinking : ""}>
-                    <ReactMarkdown
-                      components={{
-                        p: ({ children }) => <Typography variant="body2">{children}</Typography>,
-                        strong: ({ children }) => <strong style={{ fontWeight: 600 }}>{children}</strong>,
-                        li: ({ children }) => <li style={{ marginLeft: "1rem" }}>{children}</li>,
-                      }}
-                    >
-                      {m.text}
-                    </ReactMarkdown>
-                  </div>
+                  <ReactMarkdown
+                    components={{
+                      p: ({ children }) => <Typography variant="body2">{children}</Typography>,
+                      strong: ({ children }) => <strong style={{ fontWeight: 600 }}>{children}</strong>,
+                      li: ({ children }) => <li style={{ marginLeft: "1rem" }}>{children}</li>,
+                    }}
+                  >
+                    {m.text}
+                  </ReactMarkdown>
 
-                  {m.role === "assistant" && !m.id.startsWith("thinking") && (
+                  {m.role === "assistant" && (
                     <Box display="flex" justifyContent="flex-end" mt={0.5}>
                       <Tooltip title="Copy response">
                         <IconButton size="small" onClick={() => copyToClipboard(m.text)} style={{ color: "#58a6ff" }}>
@@ -424,6 +416,33 @@ export default function Dashboard() {
               </div>
             </Box>
           ))}
+
+          {/* Optimistic preview of the message just sent, before Firestore confirms it. */}
+          {pendingUserText && (
+            <Box className={styles.msgUser}>
+              <div className={styles.msgBubble}>
+                <Typography variant="body2">{pendingUserText}</Typography>
+              </div>
+            </Box>
+          )}
+
+          {/* Typing indicator — deliberately plain markup (not ReactMarkdown/Typography)
+              so the animated dots stay inline with the text on one line. */}
+          {thinking && (
+            <Box className={styles.msgAssistant}>
+              <div className={styles.msgBubble}>
+                <div className={styles.thinkingRow}>
+                  <span>PitchCraft is thinking</span>
+                  <span className={styles.typingDots}>
+                    <span />
+                    <span />
+                    <span />
+                  </span>
+                </div>
+              </div>
+            </Box>
+          )}
+
           <div ref={scrollRef} />
         </Box>
 

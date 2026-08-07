@@ -64,8 +64,7 @@ const upload = multer({
   },
 });
 
-const SYSTEM_PROMPT = `You are PitchCraft, an AI startup assistant. If someone is casually chatting
-you have to respond them casuallly but if you identify yourself given a single word,
+const SYSTEM_PROMPT = `You are PitchCraft, an AI startup assistant. Given a single word,
 idea, or prompt from the user, generate a compelling startup concept. When appropriate,
 structure your response with:
 - Startup Name
@@ -101,14 +100,19 @@ app.post("/api/generate", rateLimit, upload.single("file"), async (req, res) => 
       if (req.file.mimetype === "application/pdf") {
         // Extract text from the PDF and feed it in as additional context
         // rather than sending raw PDF bytes (which the model can't read).
-        const { default: pdfParse } = await import("pdf-parse");
+        // pdf-parse v2's API is class-based (new PDFParse().getText()), not
+        // the old v1 "call it like a function" API.
+        const { PDFParse } = await import("pdf-parse");
+        const parser = new PDFParse({ data: req.file.buffer });
         try {
-          const parsed = await pdfParse(req.file.buffer);
+          const parsed = await parser.getText();
           const text = (parsed.text || "").slice(0, 8000);
           parts.push({ text: `\n\nAttached PDF content:\n${text}` });
         } catch (pdfErr) {
           console.error("PDF parse error:", pdfErr);
           parts.push({ text: "\n\n(The attached PDF could not be read.)" });
+        } finally {
+          await parser.destroy();
         }
       } else {
         // Images can be sent inline to Gemini directly.

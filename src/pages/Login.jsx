@@ -8,6 +8,7 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { friendlyAuthError } from "../utils/authErrors";
 import AuthForm from "../components/AuthForm";
+import ThemeToggle from "../components/ThemeToggle";
 import styles from "./Login.module.css";
 
 export default function Login() {
@@ -37,30 +38,53 @@ export default function Login() {
 
   return (
     <div className={styles.container}>
-      <Card className={styles.card}>
-        <Typography variant="h5" fontWeight="bold" textAlign="center" gutterBottom>
-          Welcome Back to PitchCraft
-        </Typography>
+      <div className={styles.glowA} aria-hidden="true" />
+      <div className={styles.glowB} aria-hidden="true" />
+      <div className={styles.grain} aria-hidden="true" />
 
-        <Typography variant="body2" textAlign="center" mb={2} color="gray">
-          Sign in and continue creating your AI startup magic
-        </Typography>
+      <div className={styles.topBar}>
+        <ThemeToggle />
+      </div>
 
-        <AuthForm onSubmit={handleLogin} buttonText="Login" loading={loading} />
+      <div className={styles.stage}>
+        <div className={styles.intro}>
+          <p className={styles.eyebrow}>
+            <span className={styles.eyebrowDot} />
+            AI Pitch Studio
+          </p>
+          <h1 className={styles.headline}>
+            Welcome back.
+            <svg
+              className={styles.underline}
+              viewBox="0 0 220 12"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <path d="M2 8 C 60 2, 160 2, 218 7" pathLength="1" />
+            </svg>
+          </h1>
+          <Typography className={styles.subhead}>
+            Sign in to keep crafting your pitch.
+          </Typography>
+        </div>
 
-        {loading && (
-          <Box display="flex" justifyContent="center" mt={2}>
-            <CircularProgress size={24} color="primary" />
-          </Box>
-        )}
+        <Card className={styles.card} elevation={0}>
+          <AuthForm onSubmit={handleLogin} buttonText="Login" loading={loading} />
 
-        <Typography variant="body2" mt={2} textAlign="center" color="gray">
-          Don't have an account?{" "}
-          <Link to="/signup" className={styles.link}>
-            Sign Up
-          </Link>
-        </Typography>
-      </Card>
+          {loading && (
+            <Box display="flex" justifyContent="center" mt={2}>
+              <CircularProgress size={22} className={styles.spinner} />
+            </Box>
+          )}
+
+          <Typography className={styles.footerText}>
+            Don't have an account?{" "}
+            <Link to="/signup" className={styles.link}>
+              Sign Up
+            </Link>
+          </Typography>
+        </Card>
+      </div>
     </div>
   );
 }
