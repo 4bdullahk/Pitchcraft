@@ -1,35 +1,210 @@
+/* src/pages/Signup.module.css */
+/* Design tokens live in src/styles/tokens.css. Input/button theming lives in
+   AuthForm.module.css (shared with Login). This file is page-specific layout. */
 
 .container {
-  background-color: #0d1117;
-  color: white;
+  position: relative;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 24px;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text-primary);
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+.topBar {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 5;
+}
+
+.glowA,
+.glowB {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.glowA {
+  width: 480px;
+  height: 480px;
+  right: -120px;
+  top: -80px;
+  background: var(--glow-1);
+  animation: driftA 22s ease-in-out infinite alternate;
+}
+
+.glowB {
+  width: 420px;
+  height: 420px;
+  left: -100px;
+  bottom: -100px;
+  background: var(--glow-2);
+  animation: driftB 26s ease-in-out infinite alternate;
+}
+
+@keyframes driftA {
+  from { transform: translate(0, 0); }
+  to { transform: translate(-30px, 20px); }
+}
+
+@keyframes driftB {
+  from { transform: translate(0, 0); }
+  to { transform: translate(25px, -18px); }
+}
+
+.grain {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+.stage {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.intro {
+  text-align: center;
+  margin-bottom: 28px;
+  animation: fadeUp 0.7s ease both;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 14px;
+  font-weight: 600;
+}
+
+.eyebrowDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: inline-block;
+}
+
+.headline {
+  position: relative;
+  display: inline-block;
+  font-family: "Fraunces", Georgia, serif;
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  line-height: 1.15;
+  margin: 0 0 12px;
+  color: var(--text-primary);
+}
+
+.underline {
+  display: block;
+  width: 100%;
+  height: 10px;
+  margin-top: 2px;
+  overflow: visible;
+}
+
+.underline path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 1s 0.5s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+@keyframes draw {
+  to { stroke-dashoffset: 0; }
+}
+
+.subhead {
+  color: var(--text-secondary) !important;
+  font-size: 0.95rem !important;
 }
 
 .card {
-  background-color: #161b22 !important;
-  color: white !important;
-  padding: 2rem !important;
-  border-radius: 12px !important;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5) !important;
+  background: var(--bg-elevated) !important;
+  border: 1px solid var(--bg-elevated-border) !important;
+  border-radius: 20px !important;
+  padding: 2.1rem !important;
   width: 100%;
-  max-width: 420px;
+  box-shadow: 0 24px 60px rgba(10, 6, 16, 0.35) !important;
+  animation: fadeUp 0.7s 0.12s ease both;
+  transition: background-color 0.5s ease, border-color 0.5s ease;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Stagger each field's entrance — Signup has up to 5 fields */
+.card :global(.MuiFormControl-root) {
+  animation: fadeUp 0.5s ease both;
+}
+.card :global(.MuiFormControl-root:nth-of-type(1)) { animation-delay: 0.14s; }
+.card :global(.MuiFormControl-root:nth-of-type(2)) { animation-delay: 0.19s; }
+.card :global(.MuiFormControl-root:nth-of-type(3)) { animation-delay: 0.24s; }
+.card :global(.MuiFormControl-root:nth-of-type(4)) { animation-delay: 0.29s; }
+.card :global(.MuiFormControl-root:nth-of-type(5)) { animation-delay: 0.34s; }
+
+.spinner {
+  color: var(--accent) !important;
+}
+
+.footerText {
+  margin-top: 18px !important;
+  text-align: center;
+  color: var(--text-muted) !important;
+  font-size: 0.88rem !important;
 }
 
 .link {
-  color: #58a6ff;
+  color: var(--accent-strong);
   text-decoration: none;
+  font-weight: 600;
 }
 
 .link:hover {
   text-decoration: underline;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .glowA, .glowB, .intro, .card, .card :global(.MuiFormControl-root), .underline path {
+    animation: none !important;
+  }
+  .underline path {
+    stroke-dashoffset: 0;
+  }
+}
+
 @media (max-width: 600px) {
   .card {
     padding: 1.5rem !important;
+  }
+  .glowA, .glowB {
+    filter: blur(60px);
   }
 }

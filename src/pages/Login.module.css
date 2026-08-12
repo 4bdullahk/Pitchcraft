@@ -1,36 +1,5 @@
 /* src/pages/Login.module.css */
-
-/* ---- Design tokens -------------------------------------------------- */
-/* Dark is the default; html[data-theme='light'] overrides below. */
-:root {
-  --bg: #150f1c;
-  --bg-elevated: #1f1728;
-  --bg-elevated-border: rgba(205, 168, 106, 0.22);
-  --glow-1: rgba(93, 61, 130, 0.55);
-  --glow-2: rgba(158, 74, 102, 0.35);
-  --accent: #cda86a;
-  --accent-strong: #e4c584;
-  --accent-contrast: #201308;
-  --text-primary: #f3ecdf;
-  --text-secondary: #b7ade0;
-  --text-muted: #8b81a8;
-  --danger: #e5877e;
-}
-
-html[data-theme="light"] {
-  --bg: #f4ecd8;
-  --bg-elevated: #fffbf2;
-  --bg-elevated-border: rgba(151, 108, 51, 0.28);
-  --glow-1: rgba(233, 202, 150, 0.65);
-  --glow-2: rgba(213, 168, 187, 0.45);
-  --accent: #9c7a3c;
-  --accent-strong: #7c5f2a;
-  --accent-contrast: #fffaf0;
-  --text-primary: #2a2018;
-  --text-secondary: #5c4f3f;
-  --text-muted: #83745e;
-  --danger: #b3392c;
-}
+/* Design tokens live in src/styles/tokens.css (shared across the whole app). */
 
 /* ---- Page shell ------------------------------------------------------- */
 .container {
@@ -204,72 +173,9 @@ html[data-theme="light"] {
 .card :global(.MuiFormControl-root:nth-of-type(3)) { animation-delay: 0.3s; }
 .card :global(.MuiFormControl-root:nth-of-type(4)) { animation-delay: 0.36s; }
 
-/* ---- Themed form controls (scoped to this page only) -------------------- */
-.card :global(.MuiInputBase-root) {
-  border-radius: 12px !important;
-  background: color-mix(in srgb, var(--bg) 35%, transparent);
-  transition: box-shadow 0.25s ease, border-color 0.25s ease;
-}
-
-.card :global(.MuiOutlinedInput-notchedOutline) {
-  border-color: color-mix(in srgb, var(--accent) 30%, transparent) !important;
-}
-
-.card :global(.MuiInputBase-root:hover .MuiOutlinedInput-notchedOutline) {
-  border-color: var(--accent) !important;
-}
-
-.card :global(.MuiInputBase-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
-  border-color: var(--accent-strong) !important;
-  border-width: 1.5px !important;
-}
-
-.card :global(.MuiInputBase-root.Mui-focused) {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
-}
-
-.card :global(.MuiInputLabel-root) {
-  color: var(--text-muted) !important;
-}
-
-.card :global(.MuiInputLabel-root.Mui-focused) {
-  color: var(--accent-strong) !important;
-}
-
-.card :global(input),
-.card :global(.MuiInputBase-input) {
-  color: var(--text-primary) !important;
-}
-
-.card :global(.MuiIconButton-root) {
-  color: var(--text-muted) !important;
-}
-
-/* Submit button: brass, not the app-wide green default */
-.card :global(.MuiButtonBase-root.MuiButton-contained) {
-  background: linear-gradient(135deg, var(--accent-strong), var(--accent)) !important;
-  color: var(--accent-contrast) !important;
-  border-radius: 12px !important;
-  font-weight: 600 !important;
-  text-transform: none !important;
-  padding: 11px !important;
-  box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 35%, transparent) !important;
-  transition: transform 0.18s ease, box-shadow 0.18s ease !important;
-}
-
-.card :global(.MuiButtonBase-root.MuiButton-contained:hover) {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 45%, transparent) !important;
-}
-
-.card :global(.MuiButtonBase-root.MuiButton-contained:active) {
-  transform: translateY(0);
-}
-
-.card :global(.MuiButtonBase-root.MuiButton-contained.Mui-disabled) {
-  opacity: 0.6;
-}
-
+/* ---- Themed form controls -------------------------------------------- */
+/* Input/button styling now lives in AuthForm.module.css (shared by Login
+   and Signup) so it isn't duplicated per page. */
 .spinner {
   color: var(--accent) !important;
 }

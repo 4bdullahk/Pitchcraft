@@ -1,0 +1,43 @@
+/* src/components/ConfirmDialog.module.css */
+
+.paper {
+  background: var(--bg-elevated) !important;
+  border: 1px solid var(--bg-elevated-border) !important;
+  border-radius: 16px !important;
+  min-width: 320px;
+}
+
+.title {
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+  font-family: "Fraunces", Georgia, serif;
+}
+
+.message {
+  color: var(--text-secondary) !important;
+}
+
+.actions {
+  padding: 12px 24px 20px !important;
+}
+
+.cancelButton {
+  color: var(--text-muted) !important;
+  text-transform: none !important;
+}
+
+.confirmButton {
+  background: linear-gradient(135deg, var(--accent-strong), var(--accent)) !important;
+  color: var(--accent-contrast) !important;
+  text-transform: none !important;
+  font-weight: 600 !important;
+  border-radius: 10px !important;
+}
+
+.dangerButton {
+  background: linear-gradient(135deg, var(--danger-strong), var(--danger)) !important;
+  color: #fff !important;
+  text-transform: none !important;
+  font-weight: 600 !important;
+  border-radius: 10px !important;
+}

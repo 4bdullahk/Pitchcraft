@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import multer from "multer";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import SYSTEM_PROMPT from "./systemPrompt.js"
 
 const PORT = process.env.PORT || 5000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -64,17 +65,6 @@ const upload = multer({
   },
 });
 
-const SYSTEM_PROMPT = `You are PitchCraft, an AI startup assistant. Given a single word,
-idea, or prompt from the user, generate a compelling startup concept. When appropriate,
-structure your response with:
-- Startup Name
-- Tagline
-- Elevator Pitch
-- Problem / Solution Summary
-- Target Audience
-- Landing Page Copy
-
-Keep it punchy, investor-ready, and in Markdown.`;
 
 app.get("/health", (req, res) => res.json({ ok: true }));
 
@@ -143,4 +133,4 @@ app.use((err, req, res, next) => {
   next();
 });
 
-app.listen(PORT, () => console.log(`✅ PitchCraft server running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`✅ PitchOneZ server running on http://localhost:${PORT}`));

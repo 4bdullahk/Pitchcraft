@@ -13,7 +13,7 @@ import {
 import { db, auth } from "../firebase";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import logo from "../assets/images/Pitchcraft-logo.png";
+import logo from "../assets/images/PitchOneZ.png";
 import ReactMarkdown from "react-markdown";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import CloseIcon from "@mui/icons-material/Close";
@@ -39,12 +39,14 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import apiClient, { postGenerateWithFile } from "../utils/apiClient";
+import ThemeToggle from "../components/ThemeToggle";
+import ConfirmDialog from "../components/ConfirmDialog";
 import styles from "./Dashboard.module.css";
 
 const WELCOME_MESSAGE = {
   id: "welcome",
   role: "assistant",
-  text: "Hi — I'm PitchCraft. Tell me about your startup idea or ask for a pitch.",
+  text: "Hi — I'm PitchOneZ. Tell me about your startup idea or ask for a pitch.",
   createdAt: Date.now(),
 };
 
@@ -68,6 +70,8 @@ export default function Dashboard() {
   const [thinking, setThinking] = useState(false);
   const [file, setFile] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [deleteChatId, setDeleteChatId] = useState(null);
   const fileRef = useRef();
   const scrollRef = useRef();
   // Guards against firing sendMessage twice for one Enter/click (e.g. a fast
@@ -235,9 +239,14 @@ export default function Dashboard() {
     setSidebarOpen(false);
   };
 
-  const deleteChat = async (chatId) => {
+  const requestDeleteChat = (chatId) => {
+    setDeleteChatId(chatId);
+  };
+
+  const confirmDeleteChat = async () => {
+    const chatId = deleteChatId;
+    setDeleteChatId(null);
     if (!uid || !chatId) return;
-    if (!window.confirm("Delete this chat permanently?")) return;
 
     try {
       const messagesRef = collection(db, "users", uid, "chats", chatId, "messages");
@@ -259,7 +268,10 @@ export default function Dashboard() {
     }
   };
 
-  const handleLogout = async () => {
+  const requestLogout = () => setLogoutDialogOpen(true);
+
+  const confirmLogout = async () => {
+    setLogoutDialogOpen(false);
     try {
       await signOut(auth);
       navigate("/");
@@ -282,12 +294,12 @@ export default function Dashboard() {
     <Box className={styles.page}>
       <Paper className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ""}`} elevation={2}>
         <Box p={2} display="flex" alignItems="center" gap={1}>
-          <img src={logo} alt="PitchCraft Logo" style={{ width: 32, height: 32, borderRadius: 6 }} />
+          <img src={logo} alt="PitchOneZ Logo" style={{ width: 55, height: 55, borderRadius: 6 }} />
           <Box>
-            <Typography variant="h6" sx={{ color: "#58a6ff", fontWeight: "bold" }}>
-              PitchCraft
+            <Typography variant="h6" sx={{ color: "var(--accent)", fontWeight: "bold" }}>
+              PitchOneZ
             </Typography>
-            <Typography variant="body2" color="gray">
+            <Typography variant="body2" sx={{ color: "var(--text-muted)" }}>
               AI Startup Partner
             </Typography>
           </Box>
@@ -301,8 +313,8 @@ export default function Dashboard() {
             gap={1}
             sx={{
               cursor: "pointer",
-              color: "#58a6ff",
-              "&:hover": { color: "#7ec1ff" },
+              color: "var(--accent)",
+              "&:hover": { color: "var(--accent-strong)" },
             }}
           >
             <AddCommentIcon fontSize="small" />
@@ -312,7 +324,7 @@ export default function Dashboard() {
 
         <Box className={styles.chatList} p={2}>
           {chatList.length === 0 && (
-            <Typography variant="caption" color="gray">
+            <Typography variant="caption" sx={{ color: "var(--text-muted)" }}>
               Your conversations will show up here.
             </Typography>
           )}
@@ -326,7 +338,7 @@ export default function Dashboard() {
                 }}
                 style={{
                   cursor: "pointer",
-                  color: currentChatId === chat.id ? "#58a6ff" : "white",
+                  color: currentChatId === chat.id ? "var(--accent)" : "var(--text-primary)",
                   flex: 1,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -336,7 +348,7 @@ export default function Dashboard() {
                 {chat.title}
               </Typography>
               <Tooltip title="Delete chat">
-                <IconButton size="small" onClick={() => deleteChat(chat.id)} style={{ color: "#ff6b6b" }}>
+                <IconButton size="small" onClick={() => requestDeleteChat(chat.id)} style={{ color: "var(--danger)" }}>
                   <DeleteIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
@@ -350,15 +362,25 @@ export default function Dashboard() {
             <Box ml={2} minWidth={0}>
               <Typography
                 variant="subtitle1"
-                color="white"
-                sx={{ fontSize: "0.9rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                sx={{
+                  color: "var(--text-primary)",
+                  fontSize: "0.9rem",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
               >
                 {profile ? `${profile.firstName} ${profile.lastName}` : "Guest"}
               </Typography>
               <Typography
                 variant="caption"
-                color="white"
-                sx={{ opacity: 0.8, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", display: "block" }}
+                sx={{
+                  color: "var(--text-muted)",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  display: "block",
+                }}
               >
                 {firebaseUser?.email || "Not signed in"}
               </Typography>
@@ -366,7 +388,7 @@ export default function Dashboard() {
           </Box>
 
           <Tooltip title="Logout">
-            <IconButton onClick={handleLogout} style={{ color: "#ff6b6b", flexShrink: 0 }}>
+            <IconButton onClick={requestLogout} style={{ color: "var(--danger)", flexShrink: 0 }}>
               <LogoutIcon />
             </IconButton>
           </Tooltip>
@@ -378,20 +400,27 @@ export default function Dashboard() {
       <Box className={styles.chatArea}>
         <Box className={styles.header} display="flex" alignItems="center" gap={1}>
           <IconButton className={styles.menuButton} onClick={() => setSidebarOpen((s) => !s)} size="small">
-            <MenuIcon sx={{ color: "#fff" }} />
+            <MenuIcon className={styles.menuIcon} />
           </IconButton>
-          <Box>
-            <Typography variant="h6">AI Assistant</Typography>
-            <Typography variant="caption" color="gray">
-              Powered by Gemini 2.5
+          <Box flex={1}>
+            <Typography variant="h6" className={styles.headerTitle}>
+              AI Assistant
+            </Typography>
+            <Typography variant="caption" className={styles.headerSubtitle}>
+              Powered by Gemini
             </Typography>
           </Box>
+          <ThemeToggle />
         </Box>
 
         <Box className={styles.messages}>
           {messages.map((m) => (
             <Box key={m.id} className={m.role === "user" ? styles.msgUser : styles.msgAssistant}>
-              <div className={styles.msgBubble}>
+              <div
+                className={`${styles.msgBubble} ${
+                  m.role === "user" ? styles.bubbleUser : styles.bubbleAssistant
+                }`}
+              >
                 <Box>
                   <ReactMarkdown
                     components={{
@@ -406,7 +435,7 @@ export default function Dashboard() {
                   {m.role === "assistant" && (
                     <Box display="flex" justifyContent="flex-end" mt={0.5}>
                       <Tooltip title="Copy response">
-                        <IconButton size="small" onClick={() => copyToClipboard(m.text)} style={{ color: "#58a6ff" }}>
+                        <IconButton size="small" onClick={() => copyToClipboard(m.text)} style={{ color: "var(--accent)" }}>
                           <ContentCopyIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
@@ -420,7 +449,7 @@ export default function Dashboard() {
           {/* Optimistic preview of the message just sent, before Firestore confirms it. */}
           {pendingUserText && (
             <Box className={styles.msgUser}>
-              <div className={styles.msgBubble}>
+              <div className={`${styles.msgBubble} ${styles.bubbleUser}`}>
                 <Typography variant="body2">{pendingUserText}</Typography>
               </div>
             </Box>
@@ -430,9 +459,9 @@ export default function Dashboard() {
               so the animated dots stay inline with the text on one line. */}
           {thinking && (
             <Box className={styles.msgAssistant}>
-              <div className={styles.msgBubble}>
+              <div className={`${styles.msgBubble} ${styles.bubbleAssistant}`}>
                 <div className={styles.thinkingRow}>
-                  <span>PitchCraft is thinking</span>
+                  <span>PitchOneZ is thinking</span>
                   <span className={styles.typingDots}>
                     <span />
                     <span />
@@ -455,7 +484,7 @@ export default function Dashboard() {
                 if (fileRef.current) fileRef.current.value = "";
               }}
               deleteIcon={<CloseIcon />}
-              sx={{ background: "rgba(88,166,255,0.12)", color: "#58a6ff" }}
+              sx={{ background: "color-mix(in srgb, var(--accent) 14%, transparent)", color: "var(--accent-strong)" }}
             />
           </Box>
         )}
@@ -472,7 +501,7 @@ export default function Dashboard() {
           <label htmlFor="file-input">
             <Tooltip title="Attach image or PDF">
               <IconButton component="span" size="large">
-                <AttachFileIcon style={{ color: "#58a6ff" }} />
+                <AttachFileIcon style={{ color: "var(--accent)" }} />
               </IconButton>
             </Tooltip>
           </label>
@@ -503,11 +532,33 @@ export default function Dashboard() {
         </Box>
 
         <Box p={1} className={styles.footerNote}>
-          <Typography variant="caption" color="gray">
+          <Typography variant="caption" sx={{ color: "var(--text-muted)" }}>
             You can attach images or PDFs (max 10MB).
           </Typography>
         </Box>
       </Box>
+
+      <ConfirmDialog
+        open={logoutDialogOpen}
+        title="Log out?"
+        message="You'll need to sign in again to keep crafting pitches."
+        confirmText="Log out"
+        cancelText="Stay signed in"
+        danger
+        onConfirm={confirmLogout}
+        onCancel={() => setLogoutDialogOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deleteChatId)}
+        title="Delete this chat?"
+        message="This permanently deletes the chat and all its messages. This can't be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        danger
+        onConfirm={confirmDeleteChat}
+        onCancel={() => setDeleteChatId(null)}
+      />
     </Box>
   );
 }
